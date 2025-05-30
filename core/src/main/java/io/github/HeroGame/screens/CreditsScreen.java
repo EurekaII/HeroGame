@@ -69,7 +69,7 @@ public class CreditsScreen extends BaseScreen {
 
 
         // Przycisk Powrotu
-        TextButton backButton = new TextButton(i18nBundle.get("back"), skin, "default-textbutton"); // Użyj stylu "default-textbutton"
+        TextButton backButton = new TextButton(i18nBundle.get("back"), skin, "default"); // Użyj stylu "default"
         backButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {

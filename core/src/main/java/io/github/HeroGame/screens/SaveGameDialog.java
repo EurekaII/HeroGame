@@ -85,9 +85,9 @@ public class SaveGameDialog extends Dialog {
         contentTable.add(saveNameField).width(300).left().pad(5).row();
 
         Table buttonTable = new Table(skin);
-        saveButton = new TextButton(bundle.get("save"), skin, "default-textbutton");
-        deleteButton = new TextButton(bundle.get("delete"), skin, "default-textbutton");
-        TextButton backButton = new TextButton(bundle.get("back"), skin, "default-textbutton");
+        saveButton = new TextButton(bundle.get("save"), skin, "default");
+        deleteButton = new TextButton(bundle.get("delete"), skin, "default");
+        TextButton backButton = new TextButton(bundle.get("back"), skin, "default");
 
         deleteButton.setDisabled(true);
 
@@ -207,6 +207,7 @@ public class SaveGameDialog extends Dialog {
         saveNameField.setText("");
         deleteButton.setDisabled(true);
     }
+
 
     private void performSave(String fileName) {
         try {

@@ -2,6 +2,7 @@ package io.github.HeroGame.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -115,7 +116,6 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
         paintModeActive = false;
         currentPaintTileType = TileType.GRASS;
 
-        togglePause();
     }
 
     private void initializeWorldGridFromTiledMap() {
@@ -242,21 +242,22 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        if (!isPaused) {
-            saveSystem.update(delta, new GameData(worldGridData, mapWidthTiles, mapHeightTiles));
-        }
-
+        // Obsługujemy wejście tylko gdy gra nie jest zapauzowana
         if (!isPaused) {
             handleInput(delta);
-            worldCamera.update();
         }
 
+        // Czyścimy ekran
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        // Ustawiamy viewport i macierz projekcji dla świata gry
         worldViewport.apply();
         batch.setProjectionMatrix(worldCamera.combined);
+
+        // Rozpoczynamy renderowanie świata gry
         batch.begin();
 
+        // Renderujemy bazowe kafelki (dirt)
         for (int x = 0; x < mapWidthTiles; x++) {
             for (int y = 0; y < mapHeightTiles; y++) {
                 TextureRegion baseTile = tileLookupMap.get(new NeighborCombination(TileType.DIRT, TileType.DIRT, TileType.DIRT, TileType.DIRT, TileType.DIRT));
@@ -266,6 +267,7 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
             }
         }
 
+        // Renderujemy kafelki trawy z wykorzystaniem dual grid
         for (int dx = 0; dx <= mapWidthTiles; dx++) {
             for (int dy = 0; dy <= mapHeightTiles; dy++) {
                 TileType bl = getTileTypeForDualGrid(dx, dy);
@@ -286,11 +288,13 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
             }
         }
 
+        // Kończymy renderowanie świata gry
         batch.end();
 
-        if (isPaused) {
-            Gdx.gl.glEnable(Gdx.gl.GL_BLEND);
-            Gdx.gl.glBlendFunc(Gdx.gl.GL_SRC_ALPHA, Gdx.gl.GL_ONE_MINUS_SRC_ALPHA);
+        // Jeśli gra jest zapauzowana lub są widoczne dialogi, rysujemy półprzezroczyste tło
+        if (isPaused || hasVisibleDialogs()) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
             stage.getViewport().apply();
             batch.setProjectionMatrix(stage.getCamera().combined);
@@ -300,8 +304,11 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
             batch.draw(game.getSkin().getRegion("white"), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
             batch.setColor(Color.WHITE);
             batch.end();
-            Gdx.gl.glDisable(Gdx.gl.GL_BLEND);
+
+            Gdx.gl.glDisable(GL20.GL_BLEND);
         }
+
+        // Renderujemy UI (stage)
         stage.act(delta);
         stage.draw();
     }
@@ -467,12 +474,12 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
         float buttonWidth = 350f;
         float buttonPad = 15f;
 
-        TextButton resumeButton = new TextButton(bundle.get("resumeGame"), game.getSkin(), "default-textbutton");
-        TextButton saveButton = new TextButton(bundle.get("saveGame"), game.getSkin(), "default-textbutton");
-        TextButton loadButton = new TextButton(bundle.get("loadGame"), game.getSkin(), "default-textbutton");
-        TextButton optionsButton = new TextButton(bundle.get("options"), game.getSkin(), "default-textbutton");
-        TextButton exitToMainMenuButton = new TextButton(bundle.get("exitToMainMenu"), game.getSkin(), "default-textbutton");
-        TextButton exitToDesktopButton = new TextButton(bundle.get("exitGame"), game.getSkin(), "default-textbutton");
+        TextButton resumeButton = new TextButton(bundle.get("resumeGame"), game.getSkin(), "default");
+        TextButton saveButton = new TextButton(bundle.get("saveGame"), game.getSkin(), "default");
+        TextButton loadButton = new TextButton(bundle.get("loadGame"), game.getSkin(), "default");
+        TextButton optionsButton = new TextButton(bundle.get("options"), game.getSkin(), "default");
+        TextButton exitToMainMenuButton = new TextButton(bundle.get("exitToMainMenu"), game.getSkin(), "default");
+        TextButton exitToDesktopButton = new TextButton(bundle.get("exitGame"), game.getSkin(), "default");
 
         pauseTable.add(resumeButton).width(buttonWidth).pad(buttonPad).row();
         pauseTable.add(saveButton).width(buttonWidth).pad(buttonPad).row();
@@ -496,10 +503,9 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
                 GameData currentData = new GameData(worldGridData, mapWidthTiles, mapHeightTiles);
                 SaveGameDialog saveDialog = new SaveGameDialog(game, saveSystem, currentData, new SaveGameDialog.SaveGameCallback() {
                     @Override
-                    public void onSaveSuccess(String message) { // Zmieniono fileName na message
-                        log.info("Save operation successful: " + message); // Zmieniono fileName na message
-                        showTemporaryMessage(message, "save_success_title"); // Zmieniono fileName na message
-                        togglePause();
+                    public void onSaveSuccess(String message) {
+                        log.info("Save operation successful: " + message);
+                        showTemporaryMessageWithUnpause(message, "save_success_title");
                     }
 
                     @Override
@@ -511,7 +517,12 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
                     public void onError(String message) {
                         showErrorDialog(message);
                     }
-                });
+                }) {
+
+                    protected void confirmOverwrite(String fileName, Runnable saveAction) {
+                        ((GameScreen) game.getScreen()).showOverwriteConfirmation(fileName, saveAction);
+                    }
+                };
                 saveDialog.show(stage);
             }
         });
@@ -582,36 +593,166 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
         });
     }
 
+    private boolean hasVisibleDialogs() {
+        for (Actor actor : stage.getActors()) {
+            if (actor instanceof Dialog) {
+                Dialog dialog = (Dialog) actor;
+                if (dialog.isVisible() && dialog.getStage() != null) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private void togglePause() {
         isPaused = !isPaused;
         if (isPaused) {
             stage.addActor(pauseTable);
-            Gdx.input.setInputProcessor(stage);
             log.info("Game paused.");
         } else {
             pauseTable.remove();
-            Gdx.input.setInputProcessor(new com.badlogic.gdx.InputMultiplexer(stage, this));
             log.info("Game resumed.");
         }
+        // Ustawiamy raz multiplexer, zawsze z odświeżonym stanem isPaused
+        Gdx.input.setInputProcessor(new InputMultiplexer(stage, this));
     }
+
+
+    private void setupDialogContent(Dialog dialog, String title, String message, String[] buttonTexts, Runnable[] buttonActions) {
+        // Czyścimy istniejącą zawartość
+        dialog.getContentTable().clear();
+        dialog.getButtonTable().clear();
+
+        // Ustawiamy domyślną szerokość dla zawartości
+        float contentWidth = 400f;
+        dialog.getContentTable().defaults().width(contentWidth).pad(20f);
+
+        // Dodajemy tytuł jako etykietę w tabeli zawartości
+        Label titleLabel = new Label(title, game.getSkin(), "default-label");
+        titleLabel.setWrap(true);
+        titleLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        dialog.getContentTable().add(titleLabel).row();
+
+        // Dodajemy wiadomość
+        Label messageLabel = new Label(message, game.getSkin(), "default-label");
+        messageLabel.setWrap(true);
+        messageLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        dialog.getContentTable().add(messageLabel).row();
+
+        // Dodajemy przyciski
+        for (int i = 0; i < buttonTexts.length; i++) {
+            TextButton button = new TextButton(buttonTexts[i], game.getSkin(), "default");
+            final int index = i;
+            button.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    if (buttonActions[index] != null) {
+                        buttonActions[index].run();
+                    }
+                    dialog.hide();
+                }
+            });
+            dialog.getButtonTable().add(button)
+                .width(120f)
+                .height(40f)
+                .pad(10f, 20f, 20f, 20f);
+        }
+
+        // Dopasowujemy rozmiar dialogu do zawartości
+        dialog.pack();
+
+        // Ustalamy minimalne i maksymalne rozmiary
+        float minWidth = 300f;
+        float minHeight = 150f;
+        float maxWidth = Gdx.graphics.getWidth() * 0.9f;
+        float maxHeight = Gdx.graphics.getHeight() * 0.8f;
+
+        float dialogWidth = Math.max(minWidth, dialog.getWidth());
+        float dialogHeight = Math.max(minHeight, dialog.getHeight());
+        dialogWidth = Math.min(dialogWidth, maxWidth);
+        dialogHeight = Math.min(dialogHeight, maxHeight);
+
+        dialog.setSize(dialogWidth, dialogHeight);
+
+        // Centrujemy dialog na ekranie
+        dialog.setPosition(
+            (Gdx.graphics.getWidth() - dialogWidth) / 2f,
+            (Gdx.graphics.getHeight() - dialogHeight) / 2f
+        );
+    }
+
+    private void showTemporaryMessageWithUnpause(String message, String titleBundleKey) {
+        I18NBundle i18n = game.getI18nBundle();
+        String title = i18n.get(titleBundleKey);
+
+        Dialog dialog = new Dialog("", game.getSkin()) {
+            @Override
+            protected void result(Object object) {
+                this.hide();
+                isPaused = false;
+                if (pauseTable != null) {
+                    pauseTable.remove();
+                }
+                log.info("Game resumed after save confirmation.");
+                Gdx.input.setInputProcessor(new InputMultiplexer(stage, GameScreen.this));
+            }
+        };
+
+        setupDialogContent(dialog, title, message, new String[]{i18n.get("ok")}, new Runnable[]{null});
+        dialog.show(stage);
+    }
+
 
     // Metoda pomocnicza do wyświetlania dialogów błędów
     private void showErrorDialog(String message) {
         I18NBundle i18n = game.getI18nBundle();
-        Dialog errorDialog = new Dialog(i18n.get("error_title"), game.getSkin());
-        errorDialog.text(message, game.getSkin().get("default-label", Label.LabelStyle.class));
-        TextButton.TextButtonStyle buttonStyle = game.getSkin().get("default-textbutton", TextButton.TextButtonStyle.class);
-        errorDialog.button(i18n.get("ok"), buttonStyle);
+        Dialog errorDialog = new Dialog("", game.getSkin()) {
+            @Override
+            protected void result(Object object) {
+                this.hide(); // Tylko zamykamy dialog, nie zmieniamy stanu pauzy
+            }
+        };
+        setupDialogContent(errorDialog, i18n.get("error_title"), message, new String[]{i18n.get("ok")}, new Runnable[]{null});
         errorDialog.show(stage);
     }
 
     // Metoda pomocnicza do wyświetlania tymczasowych komunikatów
     private void showTemporaryMessage(String message, String titleBundleKey) {
         I18NBundle i18n = game.getI18nBundle();
-        Dialog messageDialog = new Dialog(i18n.get(titleBundleKey), game.getSkin());
-        messageDialog.text(message, game.getSkin().get("default-label", Label.LabelStyle.class));
-        TextButton.TextButtonStyle buttonStyle = game.getSkin().get("default-textbutton", TextButton.TextButtonStyle.class);
-        messageDialog.button(i18n.get("ok"), buttonStyle);
-        messageDialog.show(stage);
+        String title = i18n.get(titleBundleKey); // Pobierz tytuł z bundle
+
+        Dialog messageDialog = new Dialog("", game.getSkin()) {
+            @Override
+            protected void result(Object object) {
+                this.hide(); // Po kliknięciu przycisku dialog się zamyka
+            }
+        };
+
+        // Wywołanie z 5 argumentami
+        setupDialogContent(
+            messageDialog,              // Dialog
+            title,                      // Tytuł
+            message,                    // Treść wiadomości
+            new String[]{i18n.get("ok")}, // Tablica tekstów przycisków (tylko "OK")
+            new Runnable[]{null}        // Tablica akcji (null, bo "OK" tylko zamyka)
+        );
+
+        messageDialog.show(stage); // Pokaż dialog na scenie
+    }
+    private void showOverwriteConfirmation(String fileName, Runnable onConfirm) {
+        I18NBundle i18n = game.getI18nBundle();
+        String title = i18n.get("confirm_overwrite_title");
+        String message = i18n.format("confirm_overwrite_text", fileName);
+
+        Dialog dialog = new Dialog("", game.getSkin());
+        setupDialogContent(dialog, title, message,
+            new String[]{i18n.get("yes"), i18n.get("no")},
+            new Runnable[]{
+                onConfirm,  // Akcja dla "TAK"
+                null        // Akcja dla "NIE" (tylko zamyka dialog)
+            }
+        );
+        dialog.show(stage);
     }
 }

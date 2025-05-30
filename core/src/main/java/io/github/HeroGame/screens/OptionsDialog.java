@@ -76,8 +76,8 @@ public class OptionsDialog extends Dialog {
         contentTable.add(fullscreenLabel).right().padRight(10).padTop(20);
         contentTable.add(fullscreenCheckBox).left().padTop(20).row();
 
-        TextButton applyButton = new TextButton(bundle.get("apply"), skin, "default-textbutton");
-        TextButton backButton = new TextButton(bundle.get("back"), skin, "default-textbutton");
+        TextButton applyButton = new TextButton(bundle.get("apply"), skin, "default");
+        TextButton backButton = new TextButton(bundle.get("back"), skin, "default");
 
         Table buttonTable = new Table(skin);
         buttonTable.add(applyButton).width(150).pad(10);

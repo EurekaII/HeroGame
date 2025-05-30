@@ -65,7 +65,7 @@ public class LoadScreen extends BaseScreen {
 
         // --- KLUCZOWA POPRAWKA DLA PRZYCISKU ---
         // Pobierz obiekt stylu TextButton.TextButtonStyle
-        TextButton.TextButtonStyle buttonStyle = game.getSkin().get("default-textbutton", TextButton.TextButtonStyle.class);
+        TextButton.TextButtonStyle buttonStyle = game.getSkin().get("default", TextButton.TextButtonStyle.class);
         // Użyj metody button() która przyjmuje obiekt stylu
         errorDialog.button(i18n.get("ok"), buttonStyle); // Użyj stylu TextButton.TextButtonStyle
 

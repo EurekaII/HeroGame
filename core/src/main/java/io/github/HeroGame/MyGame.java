@@ -183,7 +183,7 @@ public final class MyGame extends Game {
             textButtonStyle.up = skin.newDrawable("white", new Color(0.1f, 0.1f, 0.3f, 1f));
             textButtonStyle.down = skin.newDrawable("white", new Color(0.05f, 0.05f, 0.25f, 1f));
             textButtonStyle.over = skin.newDrawable("white", new Color(0.3f, 0.4f, 0.8f, 1f));
-            skin.add("default-textbutton", textButtonStyle);
+            skin.add("default", textButtonStyle);
 
 
             // --- LabelStyle ---

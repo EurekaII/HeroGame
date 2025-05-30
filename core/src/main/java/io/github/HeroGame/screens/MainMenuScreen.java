@@ -192,14 +192,14 @@ public class MainMenuScreen extends BaseScreen {
             log.error("Missing resource key in I18NBundle: '" + bundleKey + "'", e);
         }
 
-        return new TextButton(text, skin, "default-textbutton");
+        return new TextButton(text, skin, "default");
     }
 
     private void showErrorDialog(String message) {
         I18NBundle i18n = game.getI18nBundle();
         Dialog errorDialog = new Dialog(i18n.get("error_title"), game.getSkin());
         errorDialog.text(message, game.getSkin().get("default-label", Label.LabelStyle.class));
-        TextButton.TextButtonStyle buttonStyle = game.getSkin().get("default-textbutton", TextButton.TextButtonStyle.class);
+        TextButton.TextButtonStyle buttonStyle = game.getSkin().get("default", TextButton.TextButtonStyle.class);
         errorDialog.button(i18n.get("ok"), buttonStyle); // <-- TO JEST POPRAWNA LINIJA
         errorDialog.show(stage);
     }

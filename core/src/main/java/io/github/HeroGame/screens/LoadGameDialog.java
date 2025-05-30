@@ -45,7 +45,7 @@ public class LoadGameDialog extends Dialog {
         Skin skin = game.getSkin();
         I18NBundle bundle = game.getI18nBundle();
 
-        final TextButton.TextButtonStyle defaultTextButtonStyle = skin.get("default-textbutton", TextButton.TextButtonStyle.class);
+        final TextButton.TextButtonStyle defaultTextButtonStyle = skin.get("default", TextButton.TextButtonStyle.class);
         final Label.LabelStyle defaultLabelStyle = skin.get("default-label", Label.LabelStyle.class);
 
         Label titleLabel = new Label(bundle.get("loadGame"), defaultLabelStyle);
@@ -66,9 +66,9 @@ public class LoadGameDialog extends Dialog {
         scrollPane.setScrollingDisabled(true, false);
         contentTable.add(scrollPane).colspan(3).grow().height(200).padBottom(20).row();
 
-        loadButton = new TextButton(bundle.get("load"), skin, "default-textbutton");
-        deleteButton = new TextButton(bundle.get("delete"), skin, "default-textbutton");
-        TextButton backButton = new TextButton(bundle.get("back"), skin, "default-textbutton");
+        loadButton = new TextButton(bundle.get("load"), skin, "default");
+        deleteButton = new TextButton(bundle.get("delete"), skin, "default");
+        TextButton backButton = new TextButton(bundle.get("back"), skin, "default");
 
         loadButton.setDisabled(true);
         deleteButton.setDisabled(true);
