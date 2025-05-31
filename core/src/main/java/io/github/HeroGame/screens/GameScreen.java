@@ -14,12 +14,14 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.I18NBundle;
 import com.badlogic.gdx.utils.Logger;
@@ -620,65 +622,36 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
 
 
     private void setupDialogContent(Dialog dialog, String title, String message, String[] buttonTexts, Runnable[] buttonActions) {
-        // Czyścimy istniejącą zawartość
         dialog.getContentTable().clear();
         dialog.getButtonTable().clear();
 
-        // Ustawiamy domyślną szerokość dla zawartości
-        float contentWidth = 400f;
-        dialog.getContentTable().defaults().width(contentWidth).pad(20f);
-
-        // Dodajemy tytuł jako etykietę w tabeli zawartości
+        // Nagłówek
         Label titleLabel = new Label(title, game.getSkin(), "default-label");
         titleLabel.setWrap(true);
-        titleLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
-        dialog.getContentTable().add(titleLabel).row();
+        dialog.getContentTable().add(titleLabel).width(320).pad(10).row();
 
-        // Dodajemy wiadomość
+        // Treść
         Label messageLabel = new Label(message, game.getSkin(), "default-label");
         messageLabel.setWrap(true);
-        messageLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
-        dialog.getContentTable().add(messageLabel).row();
+        dialog.getContentTable().add(messageLabel).width(320).pad(10).row();
 
-        // Dodajemy przyciski
+        // Przycisk(i)
         for (int i = 0; i < buttonTexts.length; i++) {
             TextButton button = new TextButton(buttonTexts[i], game.getSkin(), "default");
-            final int index = i;
+            final int idx = i;
             button.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
-                    if (buttonActions[index] != null) {
-                        buttonActions[index].run();
-                    }
+                    if (buttonActions[idx] != null) buttonActions[idx].run();
                     dialog.hide();
                 }
             });
-            dialog.getButtonTable().add(button)
-                .width(120f)
-                .height(40f)
-                .pad(10f, 20f, 20f, 20f);
+            dialog.getButtonTable().add(button).width(110).pad(8);
         }
-
-        // Dopasowujemy rozmiar dialogu do zawartości
         dialog.pack();
-
-        // Ustalamy minimalne i maksymalne rozmiary
-        float minWidth = 300f;
-        float minHeight = 150f;
-        float maxWidth = Gdx.graphics.getWidth() * 0.9f;
-        float maxHeight = Gdx.graphics.getHeight() * 0.8f;
-
-        float dialogWidth = Math.max(minWidth, dialog.getWidth());
-        float dialogHeight = Math.max(minHeight, dialog.getHeight());
-        dialogWidth = Math.min(dialogWidth, maxWidth);
-        dialogHeight = Math.min(dialogHeight, maxHeight);
-
-        dialog.setSize(dialogWidth, dialogHeight);
-
-        // Centrujemy dialog na ekranie
         dialog.setPosition(
-            (Gdx.graphics.getWidth() - dialogWidth) / 2f,
-            (Gdx.graphics.getHeight() - dialogHeight) / 2f
+            (Gdx.graphics.getWidth() - dialog.getWidth()) / 2f,
+            (Gdx.graphics.getHeight() - dialog.getHeight()) / 2f
         );
     }
 
@@ -703,6 +676,36 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
         dialog.show(stage);
     }
 
+    private void showConfirmationDialog(String title, String message, Runnable onConfirm) {
+        I18NBundle bundle = game.getI18nBundle();
+        Dialog dialog = new Dialog(title, skin);
+        Table contentTable = new Table(skin);
+
+        Label label = new Label(message, skin);
+        label.setWrap(true);
+        contentTable.add(label).width(320).pad(12);
+        dialog.getContentTable().add(contentTable).width(340).pad(10).row();
+
+        TextButton yesButton = new TextButton(bundle.get("yes"), skin);
+        TextButton noButton = new TextButton(bundle.get("no"), skin);
+
+        yesButton.addListener(new ClickListener() {
+            @Override public void clicked(InputEvent event, float x, float y) {
+                if (onConfirm != null) onConfirm.run();
+                dialog.hide();
+            }
+        });
+        noButton.addListener(new ClickListener() {
+            @Override public void clicked(InputEvent event, float x, float y) {
+                dialog.hide();
+            }
+        });
+
+        dialog.getButtonTable().add(yesButton).width(110).pad(6);
+        dialog.getButtonTable().add(noButton).width(110).pad(6);
+
+        dialog.show(stage);
+    }
 
     // Metoda pomocnicza do wyświetlania dialogów błędów
     private void showErrorDialog(String message) {
@@ -718,27 +721,21 @@ public class GameScreen extends BaseScreen implements Disposable, InputProcessor
     }
 
     // Metoda pomocnicza do wyświetlania tymczasowych komunikatów
-    private void showTemporaryMessage(String message, String titleBundleKey) {
+    private void showTemporaryMessage(String message, String titleKey) {
         I18NBundle i18n = game.getI18nBundle();
-        String title = i18n.get(titleBundleKey); // Pobierz tytuł z bundle
+        String title = i18n.get(titleKey);
 
-        Dialog messageDialog = new Dialog("", game.getSkin()) {
+        Dialog dialog = new Dialog("", game.getSkin()) {
             @Override
             protected void result(Object object) {
-                this.hide(); // Po kliknięciu przycisku dialog się zamyka
+                this.hide();
+                // Możliwe dodatkowe akcje po zamknięciu
             }
         };
 
-        // Wywołanie z 5 argumentami
-        setupDialogContent(
-            messageDialog,              // Dialog
-            title,                      // Tytuł
-            message,                    // Treść wiadomości
-            new String[]{i18n.get("ok")}, // Tablica tekstów przycisków (tylko "OK")
-            new Runnable[]{null}        // Tablica akcji (null, bo "OK" tylko zamyka)
-        );
-
-        messageDialog.show(stage); // Pokaż dialog na scenie
+        // Optymalizacja układu (patrz niżej)
+        setupDialogContent(dialog, title, message, new String[]{i18n.get("ok")}, new Runnable[]{null});
+        dialog.show(stage);
     }
     private void showOverwriteConfirmation(String fileName, Runnable onConfirm) {
         I18NBundle i18n = game.getI18nBundle();

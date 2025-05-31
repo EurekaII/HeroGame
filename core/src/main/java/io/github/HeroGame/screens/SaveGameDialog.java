@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.I18NBundle;
 import com.badlogic.gdx.utils.Logger;
@@ -125,7 +126,7 @@ public class SaveGameDialog extends Dialog {
                 }
 
                 if (isOverwrite) {
-                    Dialog confirmDialog = new Dialog(bundle.get("confirm_overwrite_title"), skin) {
+                    Dialog confirmDialog = new Dialog("", skin) {
                         @Override
                         protected void result(Object object) {
                             if (object != null && (Boolean) object) {
@@ -133,10 +134,28 @@ public class SaveGameDialog extends Dialog {
                             }
                         }
                     };
-                    confirmDialog.text(bundle.get("confirm_overwrite_text").replace("{fileName}", selectedFile.name()),
-                        defaultLabelStyle);
+                    Label titleLabel = new Label(bundle.get("confirm_overwrite_title"), defaultLabelStyle);
+                    titleLabel.setWrap(true);
+                    titleLabel.setAlignment(Align.center);
+                    confirmDialog.getContentTable().add(titleLabel).width(560).padTop(10).padBottom(10).center().row();
+
+                    // Treść dialogu:
+                    Table confirmTable = new Table(skin);
+                    Label confirmLabel = new Label(bundle.get("confirm_overwrite_text").replace("{fileName}", selectedFile.name()), defaultLabelStyle);
+                    confirmLabel.setWrap(true);
+                    confirmLabel.setAlignment(Align.center);
+                    confirmTable.add(confirmLabel).width(540).pad(12).center();
+                    confirmDialog.getContentTable().add(confirmTable).width(560).pad(10).center().row();
+
+                    // Przyciski:
                     confirmDialog.button(bundle.get("yes"), true, defaultTextButtonStyle);
                     confirmDialog.button(bundle.get("no"), false, defaultTextButtonStyle);
+
+                    // Ustaw szerokość/padding przycisków:
+                    Array<Cell> buttonCells = confirmDialog.getButtonTable().getCells();
+                    for (Cell cell : buttonCells) {
+                        cell.width(120).pad(8);
+                    }
                     confirmDialog.show(getStage());
                 } else {
                     performSave(finalTargetFileName);
@@ -154,7 +173,7 @@ public class SaveGameDialog extends Dialog {
                         return;
                     }
 
-                    Dialog confirmDialog = new Dialog(bundle.get("confirm_delete_title"), skin) {
+                    Dialog confirmDialog = new Dialog("", skin) {
                         @Override
                         protected void result(Object object) {
                             if (object != null && (Boolean) object) {
@@ -168,10 +187,20 @@ public class SaveGameDialog extends Dialog {
                             }
                         }
                     };
-                    confirmDialog.text(bundle.get("confirm_delete_text").replace("{fileName}", selected.name()),
-                        defaultLabelStyle);
+                    Table confirmTable = new Table(skin);
+                    Label confirmLabel = new Label(bundle.get("confirm_delete_text").replace("{fileName}", selected.name()), defaultLabelStyle);
+                    confirmLabel.setWrap(true);
+                    confirmLabel.setAlignment(Align.center);
+                    confirmTable.add(confirmLabel).width(540).pad(12).center();
+                    confirmDialog.getContentTable().add(confirmTable).width(560).pad(10).row();
                     confirmDialog.button(bundle.get("yes"), true, defaultTextButtonStyle);
                     confirmDialog.button(bundle.get("no"), false, defaultTextButtonStyle);
+
+                    // Ustaw szerokość/padding przycisków:
+                    Array<Cell> buttonCells = confirmDialog.getButtonTable().getCells();
+                    for (Cell cell : buttonCells) {
+                        cell.width(120).pad(8);
+                    }
                     confirmDialog.show(getStage());
 
                 } else {

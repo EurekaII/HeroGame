@@ -70,8 +70,7 @@ public class GameSaveSystem {
     }
 
     private void autoSave(GameData currentGameState) {
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmm").format(new Date());
-        String autosaveFileName = AUTOSAVE_PREFIX + timestamp + ".json";
+        String autosaveFileName = AUTOSAVE_PREFIX + "latest.json"; // zawsze nadpisuje jeden plik!
         saveGame(autosaveFileName, currentGameState);
         log.info("Autosaved game to: " + autosaveFileName);
     }
