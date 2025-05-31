@@ -1,3 +1,79 @@
+# HeroGame
+
+A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
+
+This project was generated with a template including simple application launchers and an `ApplicationAdapter` extension that draws libGDX logo.
+
+## Platforms
+
+- `core`: Main module with the application logic shared by all platforms.
+- `lwjgl3`: Primary desktop platform using LWJGL3; was called 'desktop' in older docs.
+- `server`: A separate application without access to the `core` module.
+- `shared`: A common module shared by `core` and `server` platforms.
+
+## Architektura gry
+
+### System jednostek
+Gra wykorzystuje skalowalny system jednostek z następującą hierarchią:
+- `Entity` - Bazowa klasa dla wszystkich obiektów w grze
+- `BaseCreature` - Bazowa klasa dla wszystkich żywych stworzeń
+- Rodziny stworzeń (np. `BaseSlime`, `BaseSkeleton`) dziedziczą po `BaseCreature`
+- Konkretne warianty (np. `GreenSlime`, `GreenSlimeElite`, `KingSlime`) dziedziczą po swojej klasie rodziny
+
+### System maszyny stanów (FSM)
+Wszystkie jednostki sterowane przez AI używają systemu FSM znajdującego się w `io.github.HeroGame.ai.fsm`:
+- `State<T>` - Interfejs dla wszystkich stanów
+- `StateMachine<T>` - Zarządza przejściami między stanami
+- Stany znajdują się w `io.github.HeroGame.ai.states`
+
+### Mechanika Duchowości
+Gra posiada unikalny system Duchowości:
+- Duchowość gracza (0-100) wpływa na zachowanie NPC
+- Wysoka duchowość (>75) może sprawić, że wrogie NPC staną się neutralne
+- Atak na neutralne NPC zmniejsza duchowość gracza o 25
+
+### System umiejętności
+Jednostki mogą implementować interfejs `IAbilityUser` aby używać umiejętności:
+- Umiejętności są współdzielone między graczem a przeciwnikami
+- Każda umiejętność ma czas odnowienia, koszt many i zasięg
+- Umiejętności znajdują się w `io.github.HeroGame.abilities`
+
+### Przykład integracji z istniejącym kodem:
+
+```java
+// W GameScreen.java, dodaj inicjalizację przeciwników z FSM:
+private void initializeEnemies() {
+    // Użyj istniejącej klasy Goblin
+    Goblin goblin = new Goblin(300, 400);
+    goblin.setTarget(player);
+    entities.add(goblin);
+    
+    // Dodaj nowe Slime'y gdy zostaną zaimplementowane
+    GreenSlime slime = new GreenSlime(200, 200);
+    slime.setTarget(player);
+    entities.add(slime);
+}
+
+// W Enemy.java (io.github.HeroGame.entities.enemies), dodaj pole StateMachine:
+public abstract class Enemy extends Entity {
+    protected StateMachine<Enemy> stateMachine;
+    protected Player target;
+    
+    public Enemy(float x, float y) {
+        super(x, y);
+        this.stateMachine = new StateMachine<>(this);
+    }
+}
+
+// W Player.java (io.github.HeroGame.entities), dodaj mechanikę duchowości:
+public class Player extends Entity {
+    private int spirituality = 50;
+    
+    public void loseSpirituality(int amount) {
+        spirituality = Math.max(0, spirituality - amount);
+    }
+}
+
 # Dalsze Założenia Projektowe: RPG z Wyborami Moralnymi i Reaktywnym Światem
 
 ## Wizja Projektu
