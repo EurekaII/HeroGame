@@ -52,6 +52,7 @@ public class OptionsDialog extends Dialog {
         languageOptions.add(new LanguageOption("en", bundle.get("english")));
         languageOptions.add(new LanguageOption("pl", bundle.get("polish")));
         languageOptions.add(new LanguageOption("de", bundle.get("german")));
+        languageOptions.add(new LanguageOption("id", bundle.get("indonesian")));
         languageSelectBox.setItems(languageOptions);
         String currentLang = settingsManager.getLanguage();
         for (LanguageOption opt : languageOptions) {
