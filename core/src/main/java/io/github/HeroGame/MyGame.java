@@ -1,5 +1,6 @@
 package io.github.HeroGame;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
@@ -65,7 +66,7 @@ public final class MyGame extends Game {
 
     @Override
     public void create() {
-        Gdx.app.setLogLevel(Logger.ERROR); // Ustaw poziom logowania dla całej aplikacji
+        Gdx.app.setLogLevel(Application.LOG_DEBUG); // Ustaw poziom logowania dla całej aplikacji
         log.debug("MyGame create() method started.");
         log.info("Creating game...");
 
@@ -254,10 +255,7 @@ public final class MyGame extends Game {
             log.error("CRITICAL: Failed to initialize Skin or I18NBundle after loading!", e);
             Gdx.app.exit();
         } finally {
-            if (pixmap != null) {
-                pixmap.dispose();
-                log.debug("Disposed reusable Pixmap.");
-            }
+
             if (cursorPixmap != null) {
                 cursorPixmap.dispose();
                 log.debug("Disposed cursor Pixmap.");
@@ -270,7 +268,14 @@ public final class MyGame extends Game {
     public void render() {
         ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1f); // Czyść ekran
         super.render(); // Wywołaj renderowanie dla aktywnego ekranu
+        try {
+            super.render();
+        } catch (Exception e) {
+            log.error("Render error: " + e.getMessage(), e);
+            e.printStackTrace();
+        }
     }
+
 
     @Override
     public void resize(int width, int height) {
@@ -364,6 +369,8 @@ public final class MyGame extends Game {
         log.error(">>>> MyGame.reloadI18nBundle() CALLED! <<<<");
         log.error(">>>> MyGame.reloadI18nBundle() CALLED! StackTrace:", new Throwable("StackTrace for reloadI18nBundle"));
         log.info("Reloading I18NBundle for target locale: " + targetLocale.toString());
+
+
 
         // Odładowanie poprzedniego bundle'a z AssetManagera, jeśli był załadowany
         if (assetManager.isLoaded(MyGame.BUNDLE_PATH)) {

@@ -68,7 +68,7 @@ public final class SettingsManager {
         String oldLanguage = prefs.getString(KEY_LANGUAGE, "NOT_SET");
 
         // Prosta walidacja - można to zrobić bardziej elegancko, np. z listą/setem obsługiwanych kodów
-        if (!languageCode.equals("en") && !languageCode.equals("pl") && !languageCode.equals("de")) { // <<< DODANO "de"
+        if (!languageCode.equals("en") && !languageCode.equals("pl") && !languageCode.equals("de") && !languageCode.equals("id")) { // <<< DODANO "id"
             log.info("Unsupported language code set: " + languageCode + ". Falling back to default (" + DEFAULT_LANGUAGE + ").");
             languageCode = DEFAULT_LANGUAGE;
         }
