@@ -20,11 +20,14 @@ public class OptionsDialog extends Dialog {
 
     private static record LanguageOption(String code, String displayName) {
         @Override
-        public String toString() { return displayName; }
+        public String toString() {
+            return displayName;
+        }
     }
 
     public interface OptionsCallback {
         void onApply();
+
         void onBack();
     }
 
@@ -90,8 +93,11 @@ public class OptionsDialog extends Dialog {
             public void changed(ChangeEvent event, Actor actor) {
                 log.debug("OptionsDialog: Apply button clicked.");
                 applySettings();
-                callback.onApply();
-                hide(); // Ukryj dialog po zastosowaniu
+                // callback.onApply() i hide() są już wywołane w applySettings() jeśli trzeba
+                if (!hasLanguageChanged()) {
+                    callback.onApply();
+                    hide();
+                }
             }
         });
 
@@ -106,6 +112,11 @@ public class OptionsDialog extends Dialog {
 
         // Ustaw tło dla całego dialogu, a nie tylko dla contentTable
         setBackground(skin.getDrawable("selectbox_background"));
+    }
+
+    private boolean hasLanguageChanged() {
+        LanguageOption lang = languageSelectBox.getSelected();
+        return !settingsManager.getLanguage().equals(lang.code());
     }
 
     private void applySettings() {
